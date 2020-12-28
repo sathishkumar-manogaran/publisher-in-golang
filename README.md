@@ -1,1 +1,1 @@
-Publisher and Subscriber in GoLang with RabbitMQ and MySQL
+Publisher in GoLang with RabbitMQ

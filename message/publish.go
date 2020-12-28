@@ -5,15 +5,13 @@ import (
 	"github.com/streadway/amqp"
 )
 
-func Publisher() {
-
-	publishMessage := `{
+var publishMessage = `{
   "offers": [
     {
       "cm_offer_id": "8f6995366e854c9faf1d9f3d233702b8",
       "hotel": {
         "hotel_id": "BH~46456",
-        "name": "Hawthorn Suites by Wyndham Eagle CO",
+        "name": "test",
         "country": "US",
         "address": "0315 Chambers Avenue, 81631",
         "latitude": 39.660193,
@@ -35,7 +33,7 @@ func Publisher() {
       },
       "room": {
         "hotel_id": "BH~46456",
-        "room_id": "S2W",
+        "room_id": "S2J",
         "description": "Senior SUITES WITH 2 QUEEN BEDS",
         "name": "JUNIOR SUITES WITH 2 QUEEN BEDS",
         "capacity": {
@@ -45,7 +43,7 @@ func Publisher() {
       },
       "rate_plan": {
         "hotel_id": "BH~46456",
-        "rate_plan_id": "BAX",
+        "rate_plan_id": "BAT",
         "cancellation_policy": [
           {
             "type": "Free cancellation",
@@ -84,29 +82,23 @@ func Publisher() {
     }
   ]
 }`
-	message := amqp.Publishing{
-		Body: []byte(publishMessage),
-	}
 
-	err := Channel.Publish("events", "random-key", false, false, message)
+func Publisher() {
 
-	if err != nil {
-		log.WithFields(log.Fields{
-			"msg":       err.Error(),
-			"errorCode": 500,
-		}).Panic("error publishing a message to the queue")
-	}
+	err := messagePublish()
 
-	_, err = Channel.QueueDeclare("test", true, false, false, false, nil)
+	err = queueDeclare(err)
 
-	if err != nil {
-		log.WithFields(log.Fields{
-			"msg":       err.Error(),
-			"errorCode": 500,
-		}).Panic("error declaring the queue")
-	}
+	queueBinding(err)
+}
 
-	err = Channel.QueueBind("test", "#", "events", false, nil)
+func queueBinding(err error) {
+	err = Channel.QueueBind(
+		"test",
+		"#",
+		"events",
+		false,
+		nil)
 
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -114,4 +106,43 @@ func Publisher() {
 			"errorCode": 500,
 		}).Panic("error binding to the queue")
 	}
+}
+
+func queueDeclare(err error) error {
+	_, err = Channel.QueueDeclare(
+		"test",
+		true,
+		false,
+		false,
+		false,
+		nil)
+
+	if err != nil {
+		log.WithFields(log.Fields{
+			"msg":       err.Error(),
+			"errorCode": 500,
+		}).Panic("error declaring the queue")
+	}
+	return err
+}
+
+func messagePublish() error {
+	message := amqp.Publishing{
+		Body: []byte(publishMessage),
+	}
+
+	err := Channel.Publish(
+		"events",
+		"random-key",
+		false,
+		false,
+		message)
+
+	if err != nil {
+		log.WithFields(log.Fields{
+			"msg":       err.Error(),
+			"errorCode": 500,
+		}).Panic("error publishing a message to the queue")
+	}
+	return err
 }
